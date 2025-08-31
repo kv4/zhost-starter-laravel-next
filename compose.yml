@@ -1,0 +1,93 @@
+services:
+  # 1. Backend (Laravel / PHP)
+  app:
+    build:
+      context: .
+      dockerfile: ./infra/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: zhost-app
+    volumes:
+      - ./backend:/var/www/html
+      - ./infra/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - zhost-network
+    # Add dependency on the healthy state of the DB
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 2. Web Server (Nginx)
+  web:
+    image: nginx:1.25-alpine
+    container_name: zhost-web
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - zhost-network
+
+  # 3. Database (PostgreSQL)
+  db:
+    image: postgres:17-alpine
+    container_name: zhost-db
+    ports:
+      - "54320:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-zhost}
+      POSTGRES_USER: ${DB_USERNAME:-zhost_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - zhost-db-data:/var/lib/postgresql/data
+    networks:
+      - zhost-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zhost_user} -d ${POSTGRES_DB:-zhost}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 4. Frontend (Next.js - for development only)
+  node:
+    build:
+      context: .
+      dockerfile: ./infra/node/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: zhost-node
+    working_dir: /app # working_dir is still useful here
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - ./node_modules:/app/node_modules
+    # The command remains unchanged
+    command: npm run dev
+    networks:
+      - zhost-network
+  tools:
+    build:
+      context: .
+      dockerfile: ./infra/tools/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: zhost-tools
+    # Mount the entire project into the /app working directory
+    volumes:
+      - .:/app
+
+# Networks and Volumes
+networks:
+  zhost-network:
+    driver: bridge
+
+volumes:
+  zhost-db-data:
+    driver: local

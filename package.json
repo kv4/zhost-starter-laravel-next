@@ -1,0 +1,27 @@
+{
+  "name": "zhost-monorepo",
+  "private": true,
+  "scripts": {
+    "prepare": "is-ci || husky"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "is-ci": "^4.1.0",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "backend/app/**/*.php": [
+      "./backend/vendor/bin/pint"
+    ],
+    "frontend/src/**/*.{js,jsx,ts,tsx}": [
+      "sh -c 'cd frontend && npx next lint --fix'"
+    ],
+    "{backend,frontend}/**/*.{js,jsx,ts,tsx,php,json,css,md}": [
+      "prettier --write"
+    ]
+  }
+}

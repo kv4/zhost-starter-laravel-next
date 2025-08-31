@@ -1,0 +1,22 @@
+# backend/phpstan.neon
+
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - routes
+        - config
+
+    # Level from 0 (most lenient) to 9 (most strict)
+    level: 5
+
+    # Some Laravel functionality is difficult to analyze statically,
+    # so we can add ignored errors here in the future.
+    #ignoreErrors:
+    #    - '#PHPDoc tag @var#'
+    parallel:
+           # Set the maximum number of processes to 1,
+           # which effectively disables parallel mode.
+           maximumNumberOfProcesses: 1

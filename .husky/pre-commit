@@ -1,0 +1,2 @@
+#!/bin/sh
+make root-exec ARGS="npx lint-staged"

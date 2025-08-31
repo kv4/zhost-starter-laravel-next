@@ -1,0 +1,37 @@
+# Docker
+.docker/
+docker-compose.override.yml
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel (inside /backend)
+/backend/vendor/
+/backend/node_modules/
+/backend/.env
+/backend/public/build/
+/backend/storage/*.key
+/backend/storage/framework/
+/backend/storage/logs/*.log
+
+# Next.js (inside /frontend)
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/.env.local
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+# Global node_modules
+/node_modules
+
+# Environments
+/.env
+
+.setup-complete

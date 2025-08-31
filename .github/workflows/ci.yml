@@ -1,0 +1,45 @@
+# .github/workflows/ci.yml
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["master", "develop"]
+  pull_request:
+    branches: ["master", "develop"]
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+
+    # Disable Next.js telemetry for all steps
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build 'tools' Docker image
+        run: docker compose build tools
+
+      - name: Install PHP dependencies
+        run: docker compose run --rm --user=root tools composer install --working-dir=./backend --no-interaction --prefer-dist
+
+      - name: Install Node.js dependencies
+        # Use npm install in the root. NPM Workspaces will automatically install dependencies for the frontend as well.
+        # The --ignore-scripts flag prevents husky from running in CI, which resolves the 'fatal: not in a git directory' issue.
+        # The --no-funding flag removes extra notifications from the logs.
+        run: docker compose run --rm --user=root tools npm install --ignore-scripts --no-funding
+
+      - name: Check PHP code quality (Pint, PHPStan)
+        run: >
+          docker compose run --rm --user=root tools
+          sh -c "./backend/vendor/bin/pint --test && ./backend/vendor/bin/phpstan analyse -c ./backend/phpstan.neon --memory-limit=2G"
+
+      - name: Check formatting (Prettier)
+        run: docker compose run --rm --user=root tools npx prettier --check .
+
+      - name: Check Frontend code quality (ESLint)
+        # Run the lint script from package.json directly in the 'frontend' workspace
+        run: docker compose run --rm --user=root tools npm run lint -w frontend
